@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=`pkg-config --cflags --libs gtk+-3.0`
 BUILDDIR=../build
 OBJECTS=main.o
-TARGET=$(BUILDDIR)/ucommanger
+TARGET=$(BUILDDIR)/ucommander
 
 all: $(TARGET)
 
