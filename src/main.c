@@ -1,28 +1,26 @@
 #include <gtk/gtk.h>
+#include "ucmd-app.h"
 
-int main(int argc,char **argv){
-	GtkWidget  *window;
-	GtkBuilder *builder;
-	GError     *error = NULL;
 
-	gtk_init(&argc, &argv);
+#include <glib/gi18n.h>
 
-	builder = gtk_builder_new();
 
-	if( !gtk_builder_add_from_file(builder, "../src/ui/main_window.ui", &error) ){
-		g_print("Unable to load UI file\n");
-		g_print("Error: %s\n", error->message);
-		g_free(error);
-		return 1;
-	}
-	window = GTK_WIDGET(gtk_builder_get_object(builder, "main_window"));
-	gtk_builder_connect_signals(builder, NULL);
+int
+main (int argc, char *argv[]){
+	Ucommander *app;
+	int status;
 
-	g_object_unref(G_OBJECT(builder));
 
-	gtk_widget_show(window);
+#ifdef ENABLE_NLS
+	bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+	textdomain (GETTEXT_PACKAGE);
+#endif
 
-	gtk_main();
 
-	return 0;
+	app = ucommander_new ();
+	status = g_application_run (G_APPLICATION (app), argc, argv);
+	g_object_unref (app);
+
+	return status;
 }
