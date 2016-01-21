@@ -12,21 +12,31 @@ int ucmd_read_dir(const gchar *path, GtkListStore *store){
 	GDir *dir;
 	const gchar *name;
 	GtkTreeIter iter;
-
 	gtk_list_store_clear(store);
 
+	/* If path is not root, then append item to get to the parent
+	 * directory */
+	if( strcmp(path, "/") != 0 ){
+		gchar *parent_path = g_path_get_dirname(path);
+		gtk_list_store_append(store, &iter);
+		gtk_list_store_set(store, &iter, PATH_COLUMN, parent_path,
+									NAME_COLUMN, "..",
+									ISDIR_COLUMN, TRUE, -1);
+
+		g_free(parent_path);
+	}
 	dir = g_dir_open(path, 0, NULL);
 	if( !dir ){
 		return EOPENDIR;
 	}
 
 	name = g_dir_read_name(dir);
+
 	while(name != NULL){
 		gchar *cur_path, *display_name;
 		gboolean is_dir;
 		GStatBuf *buf;
 		cur_path = g_build_filename(path, name, NULL);
-
 		is_dir = g_file_test(cur_path, G_FILE_TEST_IS_DIR);
 
 		display_name = g_filename_to_utf8(name, -1, NULL, NULL, NULL);
@@ -58,6 +68,7 @@ int ucmd_read_dir(const gchar *path, GtkListStore *store){
 		name = g_dir_read_name(dir);
 	}
 	g_dir_close(dir);
+
 
 	return 0;
 }
