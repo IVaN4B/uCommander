@@ -5,7 +5,7 @@ enum DirListErrors{
 	ECREATELIST
 };
 
-enum DefaultListColumns{
+enum _UcmdDirListColumns{
 	PATH_COLUMN,
 	NAME_COLUMN,
 	TYPE_COLUMN,
@@ -21,7 +21,9 @@ typedef struct _UcommanderDirList{
 	GtkListStore *store;
 } UcommanderDirList;
 
-void ucmd_get_dir_list_columns(gchar **columns, size_t amount);
+void ucmd_dir_list_get_visible_columns(size_t **columns, size_t *amount);
+
+gchar *ucmd_dir_list_get_column_name(size_t index);
 
 int ucmd_read_dir(const gchar *path, GtkListStore *store);
 

@@ -16,19 +16,6 @@ struct _UcommanderPrivate {
 	UcommanderDirList *right_list;
 };
 
-
-
-static gchar *ucmd_list_columns[NUM_COLUMNS] = {
-		"Path",
-		"Name",
-		"Type",
-		"Size",
-		"Date",
-		"Attributes",
-		"Is dir"
-	};
-
-
 /* Init file lists */
 static void ucommander_init_lists(UcommanderPrivate *priv){
 	/* TODO: Store this in settings */
@@ -83,27 +70,32 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 	GtkTreeViewColumn *column_left, *column_right;
 
 	renderer_left = gtk_cell_renderer_text_new();
-	for(size_t i = 0; i < NUM_COLUMNS; i++){
+	size_t *columns, amount;
+	ucmd_dir_list_get_visible_columns(&columns, &amount);
+
+	for(size_t i = 0; i < amount; i++){
+		size_t cindex = columns[i];
 		column_left = gtk_tree_view_column_new_with_attributes(
-						_(ucmd_list_columns[i]),
+						_(ucmd_dir_list_get_column_name(cindex)),
 						renderer_left,
-						"text", i,
+						"text", cindex,
 						NULL);
 		gtk_tree_view_column_set_resizable(column_left, 1);
-		gtk_tree_view_column_set_sort_column_id(column_left, i);
+		gtk_tree_view_column_set_sort_column_id(column_left, cindex);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (priv->left_view),
 										column_left);
 	}
 
 	renderer_right = gtk_cell_renderer_text_new();
-	for(size_t i = 0; i < NUM_COLUMNS; i++){
+	for(size_t i = 0; i < amount; i++){
+		size_t cindex = columns[i];
 		column_right = gtk_tree_view_column_new_with_attributes(
-						_(ucmd_list_columns[i]),
+						_(ucmd_dir_list_get_column_name(cindex)),
 						renderer_right,
-						"text", i,
+						"text", cindex,
 						NULL);
 		gtk_tree_view_column_set_resizable(column_right, 1);
-		gtk_tree_view_column_set_sort_column_id(column_right, i);
+		gtk_tree_view_column_set_sort_column_id(column_right, cindex);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (priv->right_view),
 										column_right);
 	}
@@ -113,6 +105,8 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 
 	g_signal_connect(priv->right_view, "row-activated",
 					G_CALLBACK(row_clicked), priv->right_list->store);
+
+	g_free(columns);
 }
 
 /* Create a new window loading a file */

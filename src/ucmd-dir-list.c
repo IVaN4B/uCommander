@@ -1,10 +1,39 @@
 #include <gtk/gtk.h>
 #include <glib/gstdio.h>
 #include <assert.h>
+#include <string.h>
 #include "ucmd-dir-list.h"
 
+static gchar *ucmd_list_columns[NUM_COLUMNS] = {
+	"Path",
+	"Name",
+	"Type",
+	"Size",
+	"Date",
+	"Attributes",
+	"Is dir"
+};
+
+gchar *ucmd_dir_list_get_column_name(size_t index){
+	if( index < 0 && index >= NUM_COLUMNS ) return NULL;
+
+	return ucmd_list_columns[index];
+}
+
 /* Get columns list from settings */
-void ucmd_get_dir_list_columns(gchar **columns, size_t amount);
+void ucmd_dir_list_get_visible_columns(size_t **columns, size_t *amount){
+
+	/* TODO: Really get these from GSettings */	
+	size_t cur_amount = 5;
+	size_t *cur_columns = g_malloc(sizeof(size_t)*cur_amount);
+	cur_columns[0] = NAME_COLUMN;
+	cur_columns[1] = TYPE_COLUMN;
+	cur_columns[2] = SIZE_COLUMN;
+	cur_columns[3] = DATE_COLUMN;
+	cur_columns[4] = ATTR_COLUMN;
+	*columns = cur_columns;
+	*amount = cur_amount;
+}
 
 /* Read dir from list */
 int ucmd_read_dir(const gchar *path, GtkListStore *store){
