@@ -1,7 +1,4 @@
-#ifndef _UCOMMANDER_
-#define _UCOMMANDER_
-
-#include <gtk/gtk.h>
+#pragma once
 
 G_BEGIN_DECLS
 
@@ -16,13 +13,11 @@ typedef struct _UcommanderClass UcommanderClass;
 typedef struct _Ucommander Ucommander;
 typedef struct _UcommanderPrivate UcommanderPrivate;
 
-struct _UcommanderClass
-{
+struct _UcommanderClass {
 	GtkApplicationClass parent_class;
 };
 
-struct _Ucommander
-{
+struct _Ucommander {
 	GtkApplication parent_instance;
 
 	UcommanderPrivate *priv;
@@ -35,5 +30,3 @@ Ucommander *ucommander_new (void);
 /* Callbacks */
 
 G_END_DECLS
-
-#endif /* _APPLICATION_H_ */
