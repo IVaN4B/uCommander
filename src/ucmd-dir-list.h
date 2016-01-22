@@ -17,7 +17,7 @@ enum _UcmdDirListColumns{
 };
 
 typedef struct _UcommanderDirList{
-	gchar *path;
+	const gchar *path;
 	GtkLabel *path_label;
 	GtkListStore *store;
 } UcommanderDirList;
