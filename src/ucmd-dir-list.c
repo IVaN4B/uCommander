@@ -97,29 +97,13 @@ int ucmd_read_dir(const gchar *path, GtkListStore *store){
 			mode_label[8] = (buff->st_mode & S_IWOTH) ? 'w' : '-';
 			mode_label[9] = (buff->st_mode & S_IXOTH) ? 'x' : '-';
 			mode_label[10] = '\0';
-			/*g_snprintf(mode_label, buff_size, "%o", buff->st_mode);*/
 
 			g_date_set_time_t (f_date, buff->st_mtime);
 			g_date_strftime(date_label, buff_size, "%F", f_date);
 			if( !is_dir ){
-				type_label = g_utf8_strchr(display_name, buff_size, '.');
-				if( display_name[0] == '.' ){
-					gboolean has_ext = FALSE;
-					gint i = 1;
-					while( !has_ext &&
-						   i < g_utf8_strlen(type_label, buff_size) ){
-						has_ext = (type_label[i] == '.');
-						i++;
-					}
-					if( has_ext ){
-						*type_label++;
-						type_label = g_utf8_strchr(type_label, buff_size, '.');
-					}else{
-						type_label = "";
-					}
-				}
+				/* TODO: .tar.gz-like extensions */
+				type_label = g_utf8_strrchr(display_name, buff_size, '.');
 			}
-			/*g_snprintf(date_label, buff_size, "%o", buff->st_mtime);*/
 		}
 		gtk_list_store_append(store, &iter);
 		gtk_list_store_set(store, &iter,
