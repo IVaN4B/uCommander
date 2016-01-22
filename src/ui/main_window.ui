@@ -36,8 +36,8 @@
         <property name="can_focus">False</property>
         <property name="label" translatable="yes">Quit</property>
         <property name="use_underline">True</property>
-        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
         <accelerator key="F10" signal="activate"/>
+        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
       </object>
     </child>
   </object>
@@ -149,6 +149,7 @@
                           <object class="GtkLabel" id="left_path">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="halign">start</property>
                             <property name="selectable">True</property>
                             <property name="ellipsize">start</property>
                             <property name="single_line_mode">True</property>
@@ -215,6 +216,7 @@
                           <object class="GtkLabel" id="right_path">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="halign">start</property>
                             <property name="selectable">True</property>
                             <property name="ellipsize">start</property>
                             <property name="single_line_mode">True</property>
