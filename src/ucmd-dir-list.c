@@ -1,4 +1,6 @@
+#define _DEFAULT_SOURCE
 #include <gtk/gtk.h>
+#include <glib/gi18n.h>
 #include <glib/gstdio.h>
 #include <assert.h>
 #include <string.h>
@@ -64,37 +66,75 @@ int ucmd_read_dir(const gchar *path, GtkListStore *store){
 	while(name != NULL){
 		gchar *cur_path, *display_name;
 		gboolean is_dir;
-		GStatBuf *buf;
+		GStatBuf *buff = g_new(GStatBuf, 1);
 		cur_path = g_build_filename(path, name, NULL);
 		is_dir = g_file_test(cur_path, G_FILE_TEST_IS_DIR);
 
 		display_name = g_filename_to_utf8(name, -1, NULL, NULL, NULL);
 
-		int result = g_lstat(name, buf);
-		off_t file_size;
-		mode_t file_mode;
-		gchar *size_label = "0";
-		gchar *attr_label = "";
+		int result = g_lstat(cur_path, buff);
+		size_t buff_size = 255;
+		GDate *f_date = g_date_new();
+
+		gchar size_label[buff_size],
+			  mode_label[buff_size],
+			  date_label[buff_size],
+			  *type_label = "";
+
 		if( result < 0 ){
 			/* TODO: Default values */
+			g_error("Stat failed");
 		}else{
-			file_size = buf->st_size;
-			file_mode = buf->st_mode;
-			g_sprintf(size_label, "%d", file_size);
-			g_sprintf(attr_label, "%d", file_mode);
+			g_snprintf(size_label, buff_size, "%d", buff->st_size);
+			mode_label[0] = (S_ISDIR(buff->st_mode)) ? 'd' : '-';
+			mode_label[1] = (buff->st_mode & S_IRUSR) ? 'r' : '-';
+			mode_label[2] = (buff->st_mode & S_IWUSR) ? 'w' : '-';
+			mode_label[3] = (buff->st_mode & S_IXUSR) ? 'x' : '-';
+			mode_label[4] = (buff->st_mode & S_IRGRP) ? 'r' : '-';
+			mode_label[5] = (buff->st_mode & S_IWGRP) ? 'w' : '-';
+			mode_label[6] = (buff->st_mode & S_IXGRP) ? 'x' : '-';
+			mode_label[7] = (buff->st_mode & S_IROTH) ? 'r' : '-';
+			mode_label[8] = (buff->st_mode & S_IWOTH) ? 'w' : '-';
+			mode_label[9] = (buff->st_mode & S_IXOTH) ? 'x' : '-';
+			mode_label[10] = '\0';
+			/*g_snprintf(mode_label, buff_size, "%o", buff->st_mode);*/
+
+			g_date_set_time_t (f_date, buff->st_mtime);
+			g_date_strftime(date_label, buff_size, "%F", f_date);
+			if( !is_dir ){
+				type_label = g_utf8_strchr(display_name, buff_size, '.');
+				if( display_name[0] == '.' ){
+					gboolean has_ext = FALSE;
+					gint i = 1;
+					while( !has_ext &&
+						   i < g_utf8_strlen(type_label, buff_size) ){
+						has_ext = (type_label[i] == '.');
+						i++;
+					}
+					if( has_ext ){
+						*type_label++;
+						type_label = g_utf8_strchr(type_label, buff_size, '.');
+					}else{
+						type_label = "";
+					}
+				}
+			}
+			/*g_snprintf(date_label, buff_size, "%o", buff->st_mtime);*/
 		}
 		gtk_list_store_append(store, &iter);
 		gtk_list_store_set(store, &iter,
 						PATH_COLUMN, cur_path,
 						NAME_COLUMN, display_name,
-						TYPE_COLUMN, "NYI",
-						SIZE_COLUMN, size_label,
-						DATE_COLUMN, "NYI",
-						ATTR_COLUMN, attr_label,
+						TYPE_COLUMN, is_dir ? "" : type_label,
+						SIZE_COLUMN, is_dir ? _("<DIR>") : size_label,
+						DATE_COLUMN, date_label,
+						ATTR_COLUMN, mode_label,
 						ISDIR_COLUMN, is_dir,
 						-1);
 		g_free(cur_path);
 		g_free(display_name);
+		g_free(buff);
+		g_free(f_date);
 		name = g_dir_read_name(dir);
 	}
 	g_dir_close(dir);
