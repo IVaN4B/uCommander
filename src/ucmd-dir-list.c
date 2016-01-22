@@ -23,7 +23,7 @@ gchar *ucmd_dir_list_get_column_name(size_t index){
 /* Get columns list from settings */
 void ucmd_dir_list_get_visible_columns(size_t **columns, size_t *amount){
 
-	/* TODO: Really get these from GSettings */	
+	/* TODO: Really get these from GSettings */
 	size_t cur_amount = 5;
 	size_t *cur_columns = g_malloc(sizeof(size_t)*cur_amount);
 	cur_columns[0] = NAME_COLUMN;
@@ -69,6 +69,7 @@ int ucmd_read_dir(const gchar *path, GtkListStore *store){
 		is_dir = g_file_test(cur_path, G_FILE_TEST_IS_DIR);
 
 		display_name = g_filename_to_utf8(name, -1, NULL, NULL, NULL);
+
 		int result = g_lstat(name, buf);
 		off_t file_size;
 		mode_t file_mode;
@@ -102,11 +103,51 @@ int ucmd_read_dir(const gchar *path, GtkListStore *store){
 	return 0;
 }
 
+
+static gint ucmd_dirs_sort_func (GtkTreeModel *model,
+           GtkTreeIter  *a,
+           GtkTreeIter  *b,
+           gpointer      user_data){
+	gboolean is_dir_a, is_dir_b;
+	gchar *name_a, *name_b;
+	int ret;
+
+	/* We need this function because we want to sort
+	* folders before files.
+	*/
+
+	gtk_tree_model_get (model, a,
+                      ISDIR_COLUMN, &is_dir_a,
+                      NAME_COLUMN, &name_a,
+                      -1);
+
+	gtk_tree_model_get (model, b,
+                      ISDIR_COLUMN, &is_dir_b,
+                      NAME_COLUMN, &name_b,
+                      -1);
+
+	if (!is_dir_a && is_dir_b)
+		ret = 1;
+	else if (is_dir_a && !is_dir_b)
+		ret = -1;
+	else{
+		ret = g_utf8_collate (name_a, name_b);
+	}
+
+	g_free (name_a);
+	g_free (name_b);
+
+	return ret;
+}
+
+
 int ucmd_create_dir_list(const gchar *path, UcommanderDirList **list){
 	*list = g_new(UcommanderDirList, 1);
 	if( *list == NULL ){
 		return ECREATELIST;
 	}
+
+	(*list)->path = path;
 
 	(*list)->store = gtk_list_store_new(NUM_COLUMNS,
 										G_TYPE_STRING,
@@ -116,6 +157,14 @@ int ucmd_create_dir_list(const gchar *path, UcommanderDirList **list){
 										G_TYPE_STRING,
 										G_TYPE_STRING,
 										G_TYPE_BOOLEAN);
+	/* Set sort column and function */
+	gtk_tree_sortable_set_default_sort_func (GTK_TREE_SORTABLE ((*list)->store),
+                                           ucmd_dirs_sort_func,
+                                           NULL, NULL);
+	gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE ((*list)->store),
+                                        GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
+                                        GTK_SORT_ASCENDING);
+
 	int result = ucmd_read_dir(path, (*list)->store);
 	return result;
 }
