@@ -17,7 +17,7 @@ struct _UcommanderPrivate {
 };
 
 /* Init file lists */
-static void ucommander_init_lists(UcommanderPrivate *priv){
+static void ucommander_init_lists(UcommanderPrivate *priv, GtkBuilder *builder){
 	/* TODO: Store this in settings */
 	const gchar *init_path = "/";
 
@@ -30,17 +30,29 @@ static void ucommander_init_lists(UcommanderPrivate *priv){
 	result = ucmd_create_dir_list(init_path, &priv->right_list);
 	if( result != 0 ){
 		/* TODO: Handle error */
+		g_error("Failed to create list");
 	}
+
+	priv->left_list->path_label = GTK_LABEL(gtk_builder_get_object(builder,
+							"left_path"));
+
+	priv->right_list->path_label = GTK_LABEL(gtk_builder_get_object(builder,
+							"right_path"));
+
+	gtk_label_set_text(priv->left_list->path_label, priv->left_list->path);
+	gtk_label_set_text(priv->right_list->path_label, priv->right_list->path);
 }
 
 static void row_clicked(GtkTreeView *view, GtkTreePath *tree_path,
 						GtkTreeViewColumn *column,
 						gpointer user_data){
+	UcommanderDirList *list;
 	GtkListStore *store;
 	gchar *path;
 	GtkTreeIter iter;
 	gboolean is_dir;
-	store = GTK_LIST_STORE(user_data);
+	list = (UcommanderDirList*)user_data;
+	store = list->store;
 
 	gtk_tree_model_get_iter(GTK_TREE_MODEL(store), &iter, tree_path);
 	gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, PATH_COLUMN, &path,
@@ -49,6 +61,7 @@ static void row_clicked(GtkTreeView *view, GtkTreePath *tree_path,
 	g_message(path);
 	if( is_dir ){
 		ucmd_read_dir(path, store);
+		gtk_label_set_text(list->path_label, path);
 	}
 
 	g_free(path);
@@ -56,9 +69,11 @@ static void row_clicked(GtkTreeView *view, GtkTreePath *tree_path,
 
 static void ucommander_init_views(UcommanderPrivate *priv,
 									GtkBuilder *builder){
-	priv->left_view = (GtkTreeView *)GTK_WIDGET(gtk_builder_get_object(builder,
+	g_assert(priv->left_list->store != NULL);
+	g_assert(priv->right_list->store != NULL);
+	priv->left_view = GTK_TREE_VIEW(gtk_builder_get_object(builder,
 							"left_view"));
-	priv->right_view = (GtkTreeView *)GTK_WIDGET(gtk_builder_get_object(builder,
+	priv->right_view = GTK_TREE_VIEW(gtk_builder_get_object(builder,
 							"right_view"));
 
 	gtk_tree_view_set_model(priv->left_view,
@@ -101,13 +116,14 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 	}
 
 	g_signal_connect(priv->left_view, "row-activated",
-					G_CALLBACK(row_clicked), priv->left_list->store);
+					G_CALLBACK(row_clicked), priv->left_list);
 
 	g_signal_connect(priv->right_view, "row-activated",
-					G_CALLBACK(row_clicked), priv->right_list->store);
+					G_CALLBACK(row_clicked), priv->right_list);
 
 	g_free(columns);
 }
+
 
 /* Create a new window loading a file */
 static void ucommander_new_window (GApplication *app, GFile *file) {
@@ -137,7 +153,7 @@ static void ucommander_new_window (GApplication *app, GFile *file) {
     }
 
 	/* ANJUTA: Widgets initialization for ucommander.ui - DO NOT REMOVE */
-	ucommander_init_lists(priv);
+	ucommander_init_lists(priv, builder);
 	ucommander_init_views(priv, builder);
 
 	g_object_unref (builder);
