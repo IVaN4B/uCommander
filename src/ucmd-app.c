@@ -85,13 +85,14 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 	GtkTreeViewColumn *column_left, *column_right;
 
 	renderer_left = gtk_cell_renderer_text_new();
-	size_t *columns, amount;
-	ucmd_dir_list_get_visible_columns(&columns, &amount);
 
+	UcommanderDirListColumn **columns = ucmd_list_columns;
+	size_t amount = ucmd_dir_list_get_columns_amount();
 	for(size_t i = 0; i < amount; i++){
-		size_t cindex = columns[i];
+		size_t cindex = columns[i]->index;
+		const gchar *name = columns[i]->name;
 		column_left = gtk_tree_view_column_new_with_attributes(
-						_(ucmd_dir_list_get_column_name(cindex)),
+						_(name),
 						renderer_left,
 						"text", cindex,
 						NULL);
@@ -103,9 +104,10 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 
 	renderer_right = gtk_cell_renderer_text_new();
 	for(size_t i = 0; i < amount; i++){
-		size_t cindex = columns[i];
+		size_t cindex = columns[i]->index;
+		const gchar *name = columns[i]->name;
 		column_right = gtk_tree_view_column_new_with_attributes(
-						_(ucmd_dir_list_get_column_name(cindex)),
+						_(name),
 						renderer_right,
 						"text", cindex,
 						NULL);

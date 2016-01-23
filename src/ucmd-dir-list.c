@@ -5,36 +5,41 @@
 #include <assert.h>
 #include <string.h>
 #include "ucmd-dir-list.h"
+static size_t ucmd_list_columns_amount = 0;
 
-static gchar *ucmd_list_columns[NUM_COLUMNS] = {
-	"Path",
-	"Name",
-	"Type",
-	"Size",
-	"Date",
-	"Attributes",
-	"Is dir"
-};
-
-gchar *ucmd_dir_list_get_column_name(size_t index){
+UcommanderDirListColumn *ucmd_dir_list_get_column(size_t index){
 	if( index < 0 && index >= NUM_COLUMNS ) return NULL;
 
 	return ucmd_list_columns[index];
 }
 
+size_t ucmd_dir_list_get_columns_amount(){
+	return ucmd_list_columns_amount;
+}
+
 /* Get columns list from settings */
-void ucmd_dir_list_get_visible_columns(size_t **columns, size_t *amount){
+void ucmd_dir_list_load_visible_columns(){
 
 	/* TODO: Really get these from GSettings */
-	size_t cur_amount = 5;
-	size_t *cur_columns = g_malloc(sizeof(size_t)*cur_amount);
-	cur_columns[0] = NAME_COLUMN;
-	cur_columns[1] = TYPE_COLUMN;
-	cur_columns[2] = SIZE_COLUMN;
-	cur_columns[3] = DATE_COLUMN;
-	cur_columns[4] = ATTR_COLUMN;
-	*columns = cur_columns;
-	*amount = cur_amount;
+	ucmd_list_columns_amount = 5;
+	ucmd_list_columns = g_malloc(sizeof(UcommanderDirListColumn)*
+								 ucmd_list_columns_amount);
+
+	for(int i = 0; i < ucmd_list_columns_amount; i++)
+		ucmd_list_columns[i] = g_new(UcommanderDirListColumn, 1);
+
+	ucmd_list_columns[0]->index = 1;
+	ucmd_list_columns[1]->index = 2;
+	ucmd_list_columns[2]->index = 3;
+	ucmd_list_columns[3]->index = 4;
+	ucmd_list_columns[4]->index = 5;
+
+	ucmd_list_columns[0]->name = "Name";
+	ucmd_list_columns[1]->name = "Type";
+	ucmd_list_columns[2]->name = "Size";
+	ucmd_list_columns[3]->name = "Date";
+	ucmd_list_columns[4]->name = "Attributes";
+
 }
 
 /* Read dir from list */
@@ -189,6 +194,11 @@ int ucmd_create_dir_list(const gchar *path, UcommanderDirList **list){
                                         GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
                                         GTK_SORT_ASCENDING);
 
+	if( ucmd_list_columns_amount == 0 ){
+		ucmd_dir_list_load_visible_columns();
+	}
+
+	(*list)->columns = ucmd_list_columns;
 	int result = ucmd_read_dir(path, (*list)->store);
 	return result;
 }
