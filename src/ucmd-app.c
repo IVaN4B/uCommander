@@ -55,12 +55,13 @@ static void row_clicked(GtkTreeView *view, GtkTreePath *tree_path,
 	store = list->store;
 
 	gtk_tree_model_get_iter(GTK_TREE_MODEL(store), &iter, tree_path);
-	gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, PATH_COLUMN, &path,
-					ISDIR_COLUMN, &is_dir, -1);
+	gtk_tree_model_get(GTK_TREE_MODEL(store), &iter,
+					ucmd_dir_list_get_columns_amount(), &path,
+					ucmd_dir_list_get_columns_amount()+1, &is_dir, -1);
 
 	g_message(path);
 	if( is_dir ){
-		ucmd_read_dir(path, store);
+		ucmd_read_dir(path, list);
 		gtk_label_set_text(list->path_label, path);
 	}
 
@@ -86,11 +87,10 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 
 	renderer_left = gtk_cell_renderer_text_new();
 
-	UcommanderDirListColumn **columns = ucmd_list_columns;
 	size_t amount = ucmd_dir_list_get_columns_amount();
 	for(size_t i = 0; i < amount; i++){
-		size_t cindex = columns[i]->index;
-		const gchar *name = columns[i]->name;
+		size_t cindex = priv->left_list->columns[i]->position;
+		const gchar *name = priv->left_list->columns[i]->name;
 		column_left = gtk_tree_view_column_new_with_attributes(
 						_(name),
 						renderer_left,
@@ -104,8 +104,8 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 
 	renderer_right = gtk_cell_renderer_text_new();
 	for(size_t i = 0; i < amount; i++){
-		size_t cindex = columns[i]->index;
-		const gchar *name = columns[i]->name;
+		size_t cindex = priv->right_list->columns[i]->position;
+		const gchar *name = priv->right_list->columns[i]->name;
 		column_right = gtk_tree_view_column_new_with_attributes(
 						_(name),
 						renderer_right,
@@ -123,7 +123,6 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 	g_signal_connect(priv->right_view, "row-activated",
 					G_CALLBACK(row_clicked), priv->right_list);
 
-	g_free(columns);
 }
 
 
