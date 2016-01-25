@@ -5,17 +5,6 @@ enum DirListErrors{
 	EGETINFO
 };
 
-enum _UcmdDirListColumns{
-	PATH_COLUMN,
-	NAME_COLUMN,
-	TYPE_COLUMN,
-	SIZE_COLUMN,
-	DATE_COLUMN,
-	ATTR_COLUMN,
-	ISDIR_COLUMN,
-	NUM_COLUMNS
-};
-
 typedef int (*ucmd_finfo_callback_t)(GFileInfo *file, gchar **output);
 
 typedef struct _UcommanderDirListColumn{
