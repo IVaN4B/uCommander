@@ -19,6 +19,7 @@
       <object class="GtkMenuItem" id="about_menu_button">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="action_name">app.about</property>
         <property name="label" translatable="yes">About</property>
         <property name="use_underline">True</property>
       </object>
@@ -31,9 +32,9 @@
     </child>
     <child>
       <object class="GtkMenuItem" id="quit_menu_button">
-        <property name="use_action_appearance">True</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="action_name">app.exit</property>
         <property name="label" translatable="yes">Quit</property>
         <property name="use_underline">True</property>
         <accelerator key="F10" signal="activate"/>
@@ -99,24 +100,25 @@
                 </style>
               </object>
             </child>
+            <child type="title">
+              <placeholder/>
+            </child>
             <child>
               <object class="GtkMenuButton" id="main_menu">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="valign">start</property>
                 <property name="popup">main_menu_list</property>
+                <property name="direction">none</property>
                 <property name="use_popover">False</property>
                 <child>
                   <placeholder/>
                 </child>
               </object>
               <packing>
+                <property name="pack_type">end</property>
                 <property name="position">1</property>
               </packing>
-            </child>
-            <child type="title">
-              <placeholder/>
             </child>
           </object>
           <packing>
@@ -275,10 +277,11 @@
             <property name="can_focus">False</property>
             <child>
               <object class="GtkButton" id="view_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">View</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.view</property>
                 <property name="relief">none</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -290,10 +293,11 @@
             </child>
             <child>
               <object class="GtkButton" id="edit_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">Edit</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.edit</property>
                 <property name="relief">none</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -305,10 +309,11 @@
             </child>
             <child>
               <object class="GtkButton" id="copy_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">Copy</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.copy</property>
                 <property name="relief">none</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -320,10 +325,11 @@
             </child>
             <child>
               <object class="GtkButton" id="move_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">Move</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.move</property>
                 <property name="relief">none</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -335,10 +341,11 @@
             </child>
             <child>
               <object class="GtkButton" id="mkdir_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">Directory</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.mkdir</property>
                 <property name="relief">none</property>
               </object>
               <packing>
@@ -349,10 +356,11 @@
             </child>
             <child>
               <object class="GtkButton" id="remove_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">Delete</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.remove</property>
                 <property name="relief">none</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -364,10 +372,11 @@
             </child>
             <child>
               <object class="GtkButton" id="term_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">Terminal</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.term</property>
                 <property name="relief">none</property>
                 <property name="focus_on_click">False</property>
               </object>
@@ -379,10 +388,11 @@
             </child>
             <child>
               <object class="GtkButton" id="exit_button">
-                <property name="label" translatable="yes">button</property>
+                <property name="label" translatable="yes">Exit</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="action_name">app.exit</property>
                 <property name="relief">none</property>
                 <property name="focus_on_click">False</property>
               </object>

@@ -6,6 +6,8 @@
 
 #define UI_FILE "src/ui/main_window.ui"
 #define TOP_WINDOW "main_window"
+#define APP_NAME "uCommander"
+#define APP_VERSION "0.1a"
 
 G_DEFINE_TYPE (Ucommander, ucommander, GTK_TYPE_APPLICATION);
 
@@ -125,6 +127,48 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 
 }
 
+static void activate_quit(GSimpleAction *action,
+					      GVariant *parameter,
+						  gpointer user_data){
+	GtkApplication *app = user_data;
+	GtkWidget *win;
+	GList *list, *next;
+
+	list = gtk_application_get_windows(app);
+	while(list){
+		win = list->data;
+		next = list->next;
+
+		gtk_widget_destroy(GTK_WIDGET(win));
+
+		list = next;
+	}
+}
+static void activate_about(GSimpleAction *action,
+						   GVariant *parameter,
+						   gpointer user_data){
+	GtkApplication *app = (GtkApplication*)user_data;
+	GtkWindow *window = gtk_application_get_active_window(app);
+	const gchar *author[] = {
+		"Ivan Chebykin",
+		NULL
+	};
+
+	gtk_show_about_dialog(GTK_WINDOW(window),
+						  "program-name", APP_NAME,
+						  "version", APP_VERSION,
+						  "copyright", "(C) 2016 Ivan Chebykin",
+						  "license-type", GTK_LICENSE_GPL_3_0,
+						  "website", "http://ivan4b.ru",
+						  "comments", "Simple and efficient file manager",
+						  "authors", author,
+						  "title", "About", NULL);
+}
+
+static GActionEntry app_entries[] = {
+	{ "exit", activate_quit, NULL, NULL, NULL },
+	{ "about", activate_about, NULL, NULL, NULL }
+};
 
 /* Create a new window loading a file */
 static void ucommander_new_window (GApplication *app, GFile *file) {
@@ -160,6 +204,10 @@ static void ucommander_new_window (GApplication *app, GFile *file) {
 	g_object_unref (builder);
 
 	gtk_window_set_application (GTK_WINDOW (window), GTK_APPLICATION (app));
+	g_action_map_add_action_entries(G_ACTION_MAP(app),
+									app_entries,
+									G_N_ELEMENTS(app_entries),
+									app);
 	if (file != NULL) {
 		/* TODO: Add code here to open the file in the new window */
 	}
