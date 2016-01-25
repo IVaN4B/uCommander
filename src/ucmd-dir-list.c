@@ -58,8 +58,6 @@ void ucmd_dir_list_load_columns(){
 /* Read dir from list */
 int ucmd_read_dir(const gchar *path, const UcommanderDirList *list){
 	g_assert(list != NULL && list->store != NULL);
-	/*GDir *dir;*/
-	/*const gchar *name;*/
 	GtkTreeIter iter;
 	gtk_list_store_clear(list->store);
 
