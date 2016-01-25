@@ -83,7 +83,6 @@ int ucmd_read_dir(const gchar *path, const UcommanderDirList *list){
 										G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
 										NULL,
 										&error);
-	size_t i = 0;
 	gchar **column_data = g_malloc(sizeof(gchar*)*ucmd_list_columns_amount);
 	while( TRUE ){
 		GFileInfo *info;
@@ -220,14 +219,21 @@ int ucmd_column_get_info_name(GFileInfo *info, gchar **output){
 }
 
 int ucmd_column_get_info_ext(GFileInfo *info, gchar **output){
-	gchar *name = (gchar*)g_file_info_get_attribute_byte_string(info,
+	GFileType type = g_file_info_get_attribute_uint32(info,
+					G_FILE_ATTRIBUTE_STANDARD_TYPE);
+	if( type == G_FILE_TYPE_REGULAR ){
+		gchar *name = (gchar*)g_file_info_get_attribute_byte_string(info,
 					G_FILE_ATTRIBUTE_STANDARD_NAME);
-	if( name == NULL ){
-		return EGETINFO;
+		if( name == NULL ){
+			return EGETINFO;
+		}
+
+		name = g_filename_to_utf8(name, -1, NULL, NULL, NULL);
+		gchar *type = g_utf8_strrchr(name, BUFF_SIZE, '.');
+		*output = type;
+	}else{
+		*output = "";
 	}
-	name = g_filename_to_utf8(name, -1, NULL, NULL, NULL);
-	gchar *type = g_utf8_strrchr(name, BUFF_SIZE, '.');
-	*output = type;
 	return 0;
 }
 
@@ -242,9 +248,15 @@ int ucmd_column_get_info_type(GFileInfo *info, gchar **output){
 }
 
 int ucmd_column_get_info_size(GFileInfo *info, gchar **output){
-	guint64 size = g_file_info_get_attribute_uint64(info,
-					G_FILE_ATTRIBUTE_STANDARD_SIZE);
-	g_snprintf(*output, BUFF_SIZE, "%d", size);
+	GFileType type = g_file_info_get_attribute_uint32(info,
+					G_FILE_ATTRIBUTE_STANDARD_TYPE);
+	if( type != G_FILE_TYPE_DIRECTORY ){
+		guint64 size = g_file_info_get_attribute_uint64(info,
+						G_FILE_ATTRIBUTE_STANDARD_SIZE);
+		g_snprintf(*output, BUFF_SIZE, "%ld", size);
+	}else{
+		*output = "<DIR>";
+	}
 	return 0;
 }
 
