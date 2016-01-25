@@ -127,6 +127,13 @@ static void ucommander_init_views(UcommanderPrivate *priv,
 
 }
 
+static void activate_action(GSimpleAction *action,
+							GVariant *parameter,
+							gpointer window){
+	const gchar *name = g_action_get_name(G_ACTION(action));
+	g_message(name);
+}
+
 static void activate_quit(GSimpleAction *action,
 					      GVariant *parameter,
 						  gpointer user_data){
@@ -144,6 +151,7 @@ static void activate_quit(GSimpleAction *action,
 		list = next;
 	}
 }
+
 static void activate_about(GSimpleAction *action,
 						   GVariant *parameter,
 						   gpointer user_data){
@@ -166,6 +174,13 @@ static void activate_about(GSimpleAction *action,
 }
 
 static GActionEntry app_entries[] = {
+	{ "view", activate_action, NULL, NULL, NULL },
+	{ "edit", activate_action, NULL, NULL, NULL },
+	{ "copy", activate_action, NULL, NULL, NULL },
+	{ "move", activate_action, NULL, NULL, NULL },
+	{ "mkdir", activate_action, NULL, NULL, NULL },
+	{ "term", activate_action, NULL, NULL, NULL },
+	{ "remove", activate_action, NULL, NULL, NULL },
 	{ "exit", activate_quit, NULL, NULL, NULL },
 	{ "about", activate_about, NULL, NULL, NULL }
 };
@@ -251,7 +266,7 @@ static void ucommander_class_init (UcommanderClass *class) {
 
 Ucommander * ucommander_new (void) {
 	return g_object_new (ucommander_get_type (),
-					"application-id", "org.gnome.ucommander",
+					"application-id", "org.ivan4b.ucommander",
 					"flags", G_APPLICATION_HANDLES_OPEN,
 					NULL);
 }
