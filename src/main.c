@@ -18,7 +18,7 @@ main (int argc, char *argv[]){
 #endif
 
 
-	app = ucommander_new ();
+	app = ucmd_new ();
 	status = g_application_run (G_APPLICATION (app), argc, argv);
 	g_object_unref (app);
 
