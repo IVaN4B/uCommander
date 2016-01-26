@@ -20,7 +20,6 @@ typedef struct _UcommanderDirListColumn{
 typedef struct _UcommanderDirList{
 	const gchar *path;
 	UcommanderDirListColumn **columns;
-	GtkLabel *path_label;
 	GtkListStore *store;
 } UcommanderDirList;
 
@@ -34,9 +33,9 @@ UcommanderDirListColumn *ucmd_dir_list_get_name_column();
 
 int ucmd_read_dir(const gchar *path, const UcommanderDirList *list);
 
-int ucmd_create_dir_list(const gchar *path, UcommanderDirList **list);
+int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list);
 
-void ucmd_free_dir_list(UcommanderDirList *list);
+void ucmd_dir_list_free(UcommanderDirList *list);
 
 int ucmd_column_get_info_name(GFileInfo *info, gchar **output);
 

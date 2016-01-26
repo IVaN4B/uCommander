@@ -163,7 +163,7 @@ static gint ucmd_dirs_sort_func (GtkTreeModel *model,
 }
 
 
-int ucmd_create_dir_list(const gchar *path, UcommanderDirList **list){
+int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list){
 	*list = g_new(UcommanderDirList, 1);
 	if( *list == NULL ){
 		return ECREATELIST;
@@ -198,7 +198,7 @@ int ucmd_create_dir_list(const gchar *path, UcommanderDirList **list){
 	return result;
 }
 
-void ucmd_free_dir_list(UcommanderDirList *list){
+void ucmd_dir_list_free(UcommanderDirList *list){
 	assert(list != NULL && list->store != NULL);
 
 	g_free(list->store);
