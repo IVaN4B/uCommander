@@ -7,8 +7,8 @@
 G_DEFINE_TYPE(Ucommander, ucmd, GTK_TYPE_APPLICATION);
 
 struct _UcommanderPrivate{
-	UcommanderDirView *left_view;
-	UcommanderDirView *right_view;
+	UcommanderDirView *left_dir_view;
+	UcommanderDirView *right_dir_view;
 };
 
 static void activate_action(GSimpleAction *action,
@@ -71,14 +71,6 @@ static GActionEntry app_entries[] = {
 	{ "history-go-forward", activate_action, NULL, NULL, NULL }
 };
 
-static void ucmd_init_list(UcommanderPrivate *priv, GtkBuilder *builder){
-
-} 
-
-static void ucmd_init_view(UcommanderPrivate *priv, GtkBuilder *builder){
-
-}
-
 /* Create a new window loading from UI file */
 static void ucmd_new_window(GApplication *app, GFile *file){
 	GtkWidget *window;
@@ -104,6 +96,36 @@ static void ucmd_new_window(GApplication *app, GFile *file){
 					TOP_WINDOW,
 					UI_FILE);
 	}
+
+	GtkLabel *left_label = GTK_LABEL(gtk_builder_get_object(builder,
+							"left_path"));
+	
+	GtkLabel *right_label = GTK_LABEL(gtk_builder_get_object(builder,
+							"right_path"));
+
+	GtkTreeView *left_view = GTK_TREE_VIEW(gtk_builder_get_object(builder,
+							"left_view"));
+
+	GtkTreeView *right_view = GTK_TREE_VIEW(gtk_builder_get_object(builder,
+							"right_view"));
+	
+	/* TODO: Get from GSettings */
+	const gchar *init_path = "/";
+
+	int result = ucmd_dir_view_create(init_path, left_view, left_label,
+					&priv->left_dir_view);
+	if( result != 0 ){
+		/* TODO: Error message string */
+		g_critical("Unable to load left view, error: %d", result);
+	}
+
+	result = ucmd_dir_view_create(init_path, right_view, right_label,
+					&priv->right_dir_view);
+	if( result != 0 ){
+		/* TODO: Error message string */
+		g_critical("Unable to load right view, error: %d", result);
+	}
+
 	g_object_unref(builder);
 
 	gtk_window_set_application (GTK_WINDOW (window), GTK_APPLICATION (app));
