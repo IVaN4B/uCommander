@@ -68,7 +68,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="action_name">history_go_back</property>
+                    <property name="action_name">app.history-go-back</property>
                     <property name="image">go_back_image</property>
                     <property name="focus_on_click">False</property>
                   </object>
@@ -83,7 +83,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="action_name">history_go_forward</property>
+                    <property name="action_name">app.history-go-forward</property>
                     <property name="image">go_forward_image</property>
                     <property name="focus_on_click">False</property>
                     <property name="xalign">0.49999997019767761</property>
