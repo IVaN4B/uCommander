@@ -31,7 +31,7 @@ UcommanderDirListColumn *ucmd_dir_list_get_column(size_t index);
 
 UcommanderDirListColumn *ucmd_dir_list_get_name_column();
 
-int ucmd_read_dir(const gchar *path, const UcommanderDirList *list);
+int ucmd_read_dir(const gchar *path, UcommanderDirList *list);
 
 int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list);
 
