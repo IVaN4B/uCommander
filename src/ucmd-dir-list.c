@@ -11,7 +11,7 @@
 static size_t ucmd_list_columns_amount = 0;
 static size_t ucmd_list_column_name_index = 0;
 static UcommanderDirListColumn **ucmd_list_columns;
-static gboolean ucmd_dir_list_enum_has_files;
+
 UcommanderDirListColumn *ucmd_dir_list_get_column(size_t index){
 	if( index < 0 && index >= ucmd_list_columns_amount ) return NULL;
 
@@ -62,57 +62,68 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 				gpointer user_data){
 	ucmd_dir_list_enum_has_files = FALSE;
 	GError *error = NULL;
-	g_message("from_callback");
 	GList *file_list = g_file_enumerator_next_files_finish(
 					G_FILE_ENUMERATOR(direnum),
 					result, &error);
-	if( file_list == NULL ){
+	if( error ){
 		g_critical("Unable to add files to list, error: %s", error->message);
-		ucmd_dir_list_enum_has_files = FALSE;
-	}
-	GList *next;
-	GFileInfo *info;
-	GtkTreeIter iter;
-	UcommanderDirList *list = (UcommanderDirList*)user_data;
-	size_t block_amount = 1;
-	while(file_list){
-		info = file_list->data;
-		next = file_list->next;
-
-		gtk_list_store_append(list->store, &iter);
-		size_t amount = ucmd_dir_list_get_columns_amount();
-		for(int k = 0; k < amount; k++){
-
-			if( list->columns[k]->visible || list->columns[k]->always_process ){
-				gchar *column_data = g_malloc(BUFF_SIZE);
-				int info_result = list->columns[k]->get_info(info,
-													&column_data);
-				if( info_result != 0 ){
-					column_data = "None";
+		g_error_free(error);
+		return;
+	}else if( file_list == NULL ){
+		g_object_unref(direnum);
+		return;
+	}else{
+		GList *node = file_list;
+		GFileInfo *info;
+		GtkTreeIter iter;
+		UcommanderDirList *list = (UcommanderDirList*)user_data;
+		size_t block_amount = 1;
+		while(node){
+			info = node->data;
+			node = node->next;
+	
+			gtk_list_store_append(list->store, &iter);
+			size_t amount = ucmd_dir_list_get_columns_amount();
+			for(int k = 0; k < amount; k++){
+	
+				if( list->columns[k]->visible
+							   	|| list->columns[k]->always_process ){
+					gchar *column_data = g_malloc(BUFF_SIZE);
+					int info_result = list->columns[k]->get_info(info,
+														&column_data);
+					if( info_result != 0 ){
+						column_data = "None";
+					}
+					GValue value = G_VALUE_INIT;
+					g_value_init(&value, G_TYPE_STRING);
+					g_value_set_string(&value, column_data);
+					gtk_list_store_set_value(list->store, &iter, k, &value);
 				}
-				GValue value = G_VALUE_INIT;
-				g_value_init(&value, G_TYPE_STRING);
-				g_value_set_string(&value, column_data);
-				gtk_list_store_set_value(list->store, &iter, k, &value);
+	
 			}
-
+			gchar *name = (gchar*)g_file_info_get_attribute_byte_string(info,
+						G_FILE_ATTRIBUTE_STANDARD_NAME);
+			gchar *cur_path = g_build_filename(list->path, name, NULL);
+			gboolean is_dir = g_file_test(cur_path, G_FILE_TEST_IS_DIR);
+			gtk_list_store_set(list->store, &iter,
+									 ucmd_list_columns_amount, cur_path,
+									 ucmd_list_columns_amount+1, is_dir, -1);
+			g_free(cur_path);
+			block_amount++;
 		}
-		gchar *name = (gchar*)g_file_info_get_attribute_byte_string(info,
-					G_FILE_ATTRIBUTE_STANDARD_NAME);
-		gchar *cur_path = g_build_filename(list->path, name, NULL);
-		gboolean is_dir = g_file_test(cur_path, G_FILE_TEST_IS_DIR);
-		gtk_list_store_set(list->store, &iter,
-								 ucmd_list_columns_amount, cur_path,
-								 ucmd_list_columns_amount+1, is_dir, -1);
-		g_free(cur_path);
-			
-		file_list = next;
-		block_amount++;
+	
+		if( block_amount < BLOCK_SIZE ){
+			ucmd_dir_list_enum_has_files = TRUE;
+		}
+	
+		g_file_enumerator_next_files_async(G_FILE_ENUMERATOR(direnum),
+						BLOCK_SIZE,
+						G_PRIORITY_LOW,
+						NULL,
+						ucmd_dir_list_add_file_callback,
+						list);
 	}
-
-	if( block_amount < BLOCK_SIZE ){
-		ucmd_dir_list_enum_has_files = TRUE;
-	}
+	g_list_free(file_list);
 }
 
 static void ucmd_dir_list_enum_files_callback(GObject *dir,
@@ -123,21 +134,19 @@ static void ucmd_dir_list_enum_files_callback(GObject *dir,
 					result, &error);
 	if( direnum == NULL ){
 		g_critical("Dir enum error: %s", error->message);
+		g_error_free(error);
+		return;
 	}
 	UcommanderDirList *list = (UcommanderDirList*)user_data;
 	ucmd_dir_list_enum_has_files = TRUE;
-	//while( ucmd_dir_list_enum_has_files ){
-		if(!g_file_enumerator_has_pending(direnum)){
-			g_file_enumerator_next_files_async(direnum,
+	g_file_enumerator_next_files_async(direnum,
 						BLOCK_SIZE,
-						G_PRIORITY_DEFAULT,
+						G_PRIORITY_LOW,
 						NULL,
 						ucmd_dir_list_add_file_callback,
 						list);
-		}
-	//}
 	g_file_enumerator_close(direnum, NULL, NULL);
-	g_object_unref(direnum);
+
 }
 
 /* Read dir from list */
@@ -146,11 +155,12 @@ int ucmd_read_dir(const gchar *path, UcommanderDirList *list){
 	GtkTreeIter iter;
 	gtk_list_store_clear(list->store);
 
-	list->path = path;
+	list->path = g_strdup(path);
 	/* If path is not root, then append item to get to the parent
 	 * directory */
 	if( strcmp(path, "/") != 0 ){
 		gchar *parent_path = g_path_get_dirname(path);
+		g_message("Pathes: %s, %s", list->path, parent_path);
 		gtk_list_store_append(list->store, &iter);
 		gtk_list_store_set(list->store, &iter,
 							ucmd_dir_list_get_name_column()->position, "..",
@@ -217,8 +227,6 @@ int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list){
 		return ECREATELIST;
 	}
 
-	(*list)->path = path;
-
 	if( ucmd_list_columns_amount == 0 ){
 		ucmd_dir_list_load_columns();
 	}
@@ -247,9 +255,10 @@ int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list){
 }
 
 void ucmd_dir_list_free(UcommanderDirList *list){
-	assert(list != NULL && list->store != NULL);
+	assert(list != NULL && list->store != NULL && list->path != NULL);
 
 	g_free(list->store);
+	g_free((gchar*)list->path);
 	g_free(list);
 }
 
