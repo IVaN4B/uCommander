@@ -38,8 +38,10 @@ void ucmd_dir_list_load_columns(){
 		ucmd_list_columns[i] = g_new(UcommanderDirListColumn, 1);
 		ucmd_list_columns[i]->position = i;
 		ucmd_list_columns[i]->visible = 1;
+		ucmd_list_columns[i]->always_process = 1;
 	}
 	ucmd_list_columns[5]->visible = 0;
+	ucmd_list_columns[5]->always_process = 0;
 
 	ucmd_list_column_name_index = 0;
 	ucmd_list_columns[0]->name = "Name";
@@ -76,7 +78,6 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 		GFileInfo *info;
 		GtkTreeIter iter;
 		UcommanderDirList *list = (UcommanderDirList*)user_data;
-		size_t block_amount = 1;
 		while(node){
 			info = node->data;
 			node = node->next;
@@ -87,7 +88,7 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 	
 				if( list->columns[k]->visible
 							   	|| list->columns[k]->always_process ){
-					gchar *column_data = g_malloc(BUFF_SIZE);
+					gchar *column_data;
 					int info_result = list->columns[k]->get_info(info,
 														&column_data);
 					if( info_result != 0 ){
@@ -97,6 +98,7 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 					g_value_init(&value, G_TYPE_STRING);
 					g_value_set_string(&value, column_data);
 					gtk_list_store_set_value(list->store, &iter, k, &value);
+					g_free(column_data);
 				}
 	
 			}
@@ -108,7 +110,7 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 									 ucmd_list_columns_amount, cur_path,
 									 ucmd_list_columns_amount+1, is_dir, -1);
 			g_free(cur_path);
-			block_amount++;
+			g_object_unref(info);
 		}
 	
 		g_file_enumerator_next_files_async(G_FILE_ENUMERATOR(direnum),
@@ -148,13 +150,14 @@ int ucmd_read_dir(const gchar *path, UcommanderDirList *list){
 	g_assert(list != NULL && list->store != NULL);
 	GtkTreeIter iter;
 	gtk_list_store_clear(list->store);
-
+	if( list->path != NULL ){
+		g_free((gchar*)list->path);
+	}
 	list->path = g_strdup(path);
 	/* If path is not root, then append item to get to the parent
 	 * directory */
 	if( strcmp(path, "/") != 0 ){
 		gchar *parent_path = g_path_get_dirname(path);
-		g_message("Pathes: %s, %s", list->path, parent_path);
 		gtk_list_store_append(list->store, &iter);
 		gtk_list_store_set(list->store, &iter,
 							ucmd_dir_list_get_name_column()->position, "..",
@@ -221,6 +224,8 @@ int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list){
 		return ECREATELIST;
 	}
 
+	(*list)->path = NULL;
+
 	if( ucmd_list_columns_amount == 0 ){
 		ucmd_dir_list_load_columns();
 	}
@@ -279,9 +284,10 @@ int ucmd_column_get_info_ext(GFileInfo *info, gchar **output){
 
 		name = g_filename_to_utf8(name, -1, NULL, NULL, NULL);
 		gchar *type = g_utf8_strrchr(name, BUFF_SIZE, '.');
-		*output = type;
+		*output = g_strdup(type);
+		g_free(name);
 	}else{
-		*output = "";
+		*output = g_strdup("");
 	}
 	return 0;
 }
@@ -292,7 +298,7 @@ int ucmd_column_get_info_type(GFileInfo *info, gchar **output){
 	if( name == NULL ){
 		return EGETINFO;
 	}
-	*output = name;
+	*output = g_strdup(name);
 	return 0;
 }
 
@@ -302,9 +308,11 @@ int ucmd_column_get_info_size(GFileInfo *info, gchar **output){
 	if( type != G_FILE_TYPE_DIRECTORY ){
 		guint64 size = g_file_info_get_attribute_uint64(info,
 						G_FILE_ATTRIBUTE_STANDARD_SIZE);
-		g_snprintf(*output, BUFF_SIZE, "%ld", size);
+		gchar tmp[BUFF_SIZE];
+		g_snprintf(tmp, BUFF_SIZE, "%ld", size);
+		*output = g_strndup(tmp, BUFF_SIZE);
 	}else{
-		*output = "<DIR>";
+		*output = g_strdup("<DIR>");
 	}
 	return 0;
 }
@@ -314,7 +322,9 @@ int ucmd_column_get_info_mtime(GFileInfo *info, gchar **output){
 					G_FILE_ATTRIBUTE_TIME_MODIFIED);
 	GDate *f_date = g_date_new();
 	g_date_set_time_t(f_date, mtime);
-	g_date_strftime(*output, BUFF_SIZE, "%F", f_date);
+	gchar tmp[BUFF_SIZE];
+	g_date_strftime(tmp, BUFF_SIZE, "%F", f_date);
+	*output = g_strndup(tmp, BUFF_SIZE);
 	g_free(f_date);
 	return 0;
 }
@@ -334,11 +344,11 @@ int ucmd_column_get_info_mode(GFileInfo *info, gchar **output){
 	mode_label[8] = (mode & S_IWOTH) ? 'w' : '-';
 	mode_label[9] = (mode & S_IXOTH) ? 'x' : '-';
 	mode_label[10] = '\0';
-	*output = mode_label;
+	*output = g_strndup(mode_label, 11);
 	return 0;
 }
 
 int ucmd_column_get_info_path(GFileInfo *info, gchar **output){
-	*output = "NYI";
+	*output = g_strdup("NYI");
 	return 0;
 }
