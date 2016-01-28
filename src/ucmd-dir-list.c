@@ -60,7 +60,6 @@ void ucmd_dir_list_load_columns(){
 static void ucmd_dir_list_add_file_callback(GObject *direnum,
 				GAsyncResult *result,
 				gpointer user_data){
-	ucmd_dir_list_enum_has_files = FALSE;
 	GError *error = NULL;
 	GList *file_list = g_file_enumerator_next_files_finish(
 					G_FILE_ENUMERATOR(direnum),
@@ -112,10 +111,6 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 			block_amount++;
 		}
 	
-		if( block_amount < BLOCK_SIZE ){
-			ucmd_dir_list_enum_has_files = TRUE;
-		}
-	
 		g_file_enumerator_next_files_async(G_FILE_ENUMERATOR(direnum),
 						BLOCK_SIZE,
 						G_PRIORITY_LOW,
@@ -138,7 +133,6 @@ static void ucmd_dir_list_enum_files_callback(GObject *dir,
 		return;
 	}
 	UcommanderDirList *list = (UcommanderDirList*)user_data;
-	ucmd_dir_list_enum_has_files = TRUE;
 	g_file_enumerator_next_files_async(direnum,
 						BLOCK_SIZE,
 						G_PRIORITY_LOW,
