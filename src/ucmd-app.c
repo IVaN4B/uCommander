@@ -16,6 +16,30 @@ static void activate_action(GSimpleAction *action,
 							gpointer window){
 	const gchar *name = g_action_get_name(G_ACTION(action));
 	g_message(name);
+	if( strcmp(name, "term") == 0 ){
+		/* TODO: GSettings */
+		GError *error = NULL;
+		gchar *term_name = "urxvt";
+		GAppInfo *term = g_app_info_create_from_commandline (
+									term_name,
+                                    NULL,
+                                    0,
+                                    &error);
+		if( error ){
+			g_critical("Unable to get terminal app %s: %s", term_name,
+														   error->message);
+			g_error_free(error);
+			return;
+		}
+
+		g_app_info_launch(term, NULL, NULL, &error);
+		if( error ){
+			g_critical("Unable to launch terminal %s: %s", term_name,
+														   error->message);
+			g_error_free(error);
+			return;
+		}
+	}
 }
 
 static void activate_quit(GSimpleAction *action,
@@ -113,14 +137,14 @@ static void ucmd_new_window(GApplication *app, GFile *file){
 	const gchar *init_path = "/";
 
 	int result = ucmd_dir_view_create(init_path, left_view, left_label,
-					&priv->left_dir_view);
+					window, &priv->left_dir_view);
 	if( result != 0 ){
 		/* TODO: Error message string */
 		g_critical("Unable to load left view, error: %d", result);
 	}
 
 	result = ucmd_dir_view_create(init_path, right_view, right_label,
-					&priv->right_dir_view);
+					window, &priv->right_dir_view);
 	if( result != 0 ){
 		/* TODO: Error message string */
 		g_critical("Unable to load right view, error: %d", result);
