@@ -20,6 +20,7 @@ typedef struct _UcommanderDirListColumn{
 typedef struct _UcommanderDirList{
 	const gchar *path;
 	UcommanderDirListColumn **columns;
+	GCancellable *cancellable;
 	GtkListStore *store;
 } UcommanderDirList;
 

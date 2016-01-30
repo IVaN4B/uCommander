@@ -1,6 +1,6 @@
 #define _DEFAULT_SOURCE
 #define BUFF_SIZE 1024
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 128
 #define SYS_COL_AMOUNT 2
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
@@ -30,7 +30,7 @@ size_t ucmd_dir_list_get_columns_amount(){
 void ucmd_dir_list_load_columns(){
 
 	/* TODO: Really get these from GSettings */
-	ucmd_list_columns_amount = 6;
+	ucmd_list_columns_amount = 7;
 	ucmd_list_columns = g_malloc(sizeof(UcommanderDirListColumn)*
 								 ucmd_list_columns_amount);
 
@@ -50,6 +50,7 @@ void ucmd_dir_list_load_columns(){
 	ucmd_list_columns[3]->name = "Date";
 	ucmd_list_columns[4]->name = "Attributes";
 	ucmd_list_columns[5]->name = "Path";
+	ucmd_list_columns[6]->name = "MIME Type";
 
 	ucmd_list_columns[0]->get_info = &ucmd_column_get_info_name;
 	ucmd_list_columns[1]->get_info = &ucmd_column_get_info_ext;
@@ -57,6 +58,7 @@ void ucmd_dir_list_load_columns(){
 	ucmd_list_columns[3]->get_info = &ucmd_column_get_info_mtime;
 	ucmd_list_columns[4]->get_info = &ucmd_column_get_info_mode;
 	ucmd_list_columns[5]->get_info = &ucmd_column_get_info_path;
+	ucmd_list_columns[6]->get_info = &ucmd_column_get_info_type;
 }
 
 static void ucmd_dir_list_add_file_callback(GObject *direnum,
@@ -66,26 +68,32 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 	GList *file_list = g_file_enumerator_next_files_finish(
 					G_FILE_ENUMERATOR(direnum),
 					result, &error);
+	UcommanderDirList *list = (UcommanderDirList*)user_data;
 	if( error ){
-		g_critical("Unable to add files to list, error: %s", error->message);
+		if( error->code != G_IO_ERROR_CANCELLED ){
+			g_critical("Unable to add files to list, error: %s", error->message);
+		}
+		g_object_unref(direnum);
 		g_error_free(error);
 		return;
 	}else if( file_list == NULL ){
 		g_object_unref(direnum);
+		g_object_unref(list->cancellable);
+		list->cancellable = NULL;
 		return;
 	}else{
+
 		GList *node = file_list;
 		GFileInfo *info;
 		GtkTreeIter iter;
-		UcommanderDirList *list = (UcommanderDirList*)user_data;
 		while(node){
 			info = node->data;
 			node = node->next;
-	
+
 			gtk_list_store_append(list->store, &iter);
 			size_t amount = ucmd_dir_list_get_columns_amount();
 			for(int k = 0; k < amount; k++){
-	
+
 				if( list->columns[k]->visible
 							   	|| list->columns[k]->always_process ){
 					gchar *column_data;
@@ -100,7 +108,7 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 					gtk_list_store_set_value(list->store, &iter, k, &value);
 					g_free(column_data);
 				}
-	
+
 			}
 			gchar *name = (gchar*)g_file_info_get_attribute_byte_string(info,
 						G_FILE_ATTRIBUTE_STANDARD_NAME);
@@ -112,11 +120,10 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 			g_free(cur_path);
 			g_object_unref(info);
 		}
-	
 		g_file_enumerator_next_files_async(G_FILE_ENUMERATOR(direnum),
 						BLOCK_SIZE,
 						G_PRIORITY_LOW,
-						NULL,
+						list->cancellable,
 						ucmd_dir_list_add_file_callback,
 						list);
 	}
@@ -127,22 +134,23 @@ static void ucmd_dir_list_enum_files_callback(GObject *dir,
 				GAsyncResult *result,
 				gpointer user_data){
 	GError *error = NULL;
+
+	UcommanderDirList *list = (UcommanderDirList*)user_data;
+
 	GFileEnumerator *direnum = g_file_enumerate_children_finish(G_FILE(dir),
-					result, &error);
-	if( direnum == NULL ){
+				result, &error);
+	if( error ){
 		g_critical("Dir enum error: %s", error->message);
 		g_error_free(error);
 		return;
 	}
-	UcommanderDirList *list = (UcommanderDirList*)user_data;
+	
 	g_file_enumerator_next_files_async(direnum,
 						BLOCK_SIZE,
 						G_PRIORITY_LOW,
-						NULL,
+						list->cancellable,
 						ucmd_dir_list_add_file_callback,
 						list);
-	g_file_enumerator_close(direnum, NULL, NULL);
-
 }
 
 /* Read dir from list */
@@ -154,6 +162,14 @@ int ucmd_read_dir(const gchar *path, UcommanderDirList *list){
 		g_free((gchar*)list->path);
 	}
 	list->path = g_strdup(path);
+	
+	/* Stop previous job before running next one */
+	if( list->cancellable != NULL ){
+		g_cancellable_cancel(list->cancellable);
+
+	}
+	list->cancellable = g_cancellable_new();
+
 	/* If path is not root, then append item to get to the parent
 	 * directory */
 	if( strcmp(path, "/") != 0 ){
@@ -166,17 +182,15 @@ int ucmd_read_dir(const gchar *path, UcommanderDirList *list){
 
 		g_free(parent_path);
 	}
-	/*GCancellable *cancellable;*/
 	GFile *dir = g_file_new_for_path(path);
 	g_file_enumerate_children_async(dir,
 							"*",
 							G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-							0,
-							NULL,
+							G_PRIORITY_DEFAULT,
+							list->cancellable,
 							ucmd_dir_list_enum_files_callback,
 							list);
 	g_object_unref(dir);
-
 	return 0;
 }
 
@@ -225,12 +239,14 @@ int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list){
 	}
 
 	(*list)->path = NULL;
+	(*list)->cancellable = NULL;
 
 	if( ucmd_list_columns_amount == 0 ){
 		ucmd_dir_list_load_columns();
 	}
 
 	(*list)->store = gtk_list_store_new(ucmd_list_columns_amount+SYS_COL_AMOUNT,
+										G_TYPE_STRING,
 										G_TYPE_STRING,
 										G_TYPE_STRING,
 										G_TYPE_STRING,
@@ -293,12 +309,12 @@ int ucmd_column_get_info_ext(GFileInfo *info, gchar **output){
 }
 
 int ucmd_column_get_info_type(GFileInfo *info, gchar **output){
-	gchar *name = (gchar*)g_file_info_get_attribute_byte_string(info,
-					G_FILE_ATTRIBUTE_STANDARD_NAME);
-	if( name == NULL ){
+	gchar *type = (gchar*)g_file_info_get_attribute_string(info,
+					G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE);
+	if( type == NULL ){
 		return EGETINFO;
 	}
-	*output = g_strdup(name);
+	*output = g_strdup(type);
 	return 0;
 }
 
