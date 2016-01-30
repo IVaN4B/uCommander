@@ -81,7 +81,7 @@ static void activate_about(GSimpleAction *action,
 }
 
 static GActionEntry app_entries[] = {
-	{ "view", activate_action, NULL, NULL, NULL },
+	{ "view", ucmd_dir_view_on_view_action, NULL, NULL, NULL },
 	{ "edit", activate_action, NULL, NULL, NULL },
 	{ "copy", activate_action, NULL, NULL, NULL },
 	{ "move", activate_action, NULL, NULL, NULL },
