@@ -13,7 +13,7 @@ struct _UcommanderPrivate{
 
 static void activate_action(GSimpleAction *action,
 							GVariant *parameter,
-							gpointer window){
+							gpointer app){
 	const gchar *name = g_action_get_name(G_ACTION(action));
 	g_message(name);
 	if( strcmp(name, "term") == 0 ){
@@ -31,7 +31,6 @@ static void activate_action(GSimpleAction *action,
 			g_error_free(error);
 			return;
 		}
-
 		g_app_info_launch(term, NULL, NULL, &error);
 		if( error ){
 			g_critical("Unable to launch terminal %s: %s", term_name,
@@ -137,14 +136,14 @@ static void ucmd_new_window(GApplication *app, GFile *file){
 	const gchar *init_path = "/";
 
 	int result = ucmd_dir_view_create(init_path, left_view, left_label,
-					window, &priv->left_dir_view);
+					GTK_WINDOW(window), &priv->left_dir_view);
 	if( result != 0 ){
 		/* TODO: Error message string */
 		g_critical("Unable to load left view, error: %d", result);
 	}
 
 	result = ucmd_dir_view_create(init_path, right_view, right_label,
-					window, &priv->right_dir_view);
+					GTK_WINDOW(window), &priv->right_dir_view);
 	if( result != 0 ){
 		/* TODO: Error message string */
 		g_critical("Unable to load right view, error: %d", result);
