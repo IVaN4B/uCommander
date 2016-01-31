@@ -57,6 +57,7 @@ int ucmd_dir_view_create(const gchar *path, GtkTreeView *view, GtkLabel *label,
 		gtk_tree_view_column_set_sort_column_id(column, cindex);
 		gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
 	}
+	gtk_tree_view_set_search_column (GTK_TREE_VIEW(view), name_pos);
 
 	g_signal_connect(view, "row-activated",
 				G_CALLBACK(ucmd_dir_view_on_row_activated), (*dir_view));
