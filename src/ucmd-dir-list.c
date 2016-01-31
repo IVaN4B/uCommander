@@ -30,7 +30,7 @@ size_t ucmd_dir_list_get_columns_amount(){
 void ucmd_dir_list_load_columns(){
 
 	/* TODO: Really get these from GSettings */
-	ucmd_list_columns_amount = 7;
+	ucmd_list_columns_amount = 8;
 	ucmd_list_columns = g_malloc(sizeof(UcommanderDirListColumn)*
 								 ucmd_list_columns_amount);
 
@@ -40,25 +40,28 @@ void ucmd_dir_list_load_columns(){
 		ucmd_list_columns[i]->visible = 1;
 		ucmd_list_columns[i]->always_process = 1;
 	}
-	ucmd_list_columns[5]->visible = 0;
-	ucmd_list_columns[5]->always_process = 0;
+	ucmd_list_columns[6]->visible = 0;
+	ucmd_list_columns[6]->always_process = 0;
+	ucmd_list_columns[0]->visible = 0;
 
-	ucmd_list_column_name_index = 0;
-	ucmd_list_columns[0]->name = "Name";
-	ucmd_list_columns[1]->name = "Type";
-	ucmd_list_columns[2]->name = "Size";
-	ucmd_list_columns[3]->name = "Date";
-	ucmd_list_columns[4]->name = "Attributes";
-	ucmd_list_columns[5]->name = "Path";
-	ucmd_list_columns[6]->name = "MIME Type";
+	ucmd_list_column_name_index = 1;
+	ucmd_list_columns[0]->name = "Icon";
+	ucmd_list_columns[1]->name = "Name";
+	ucmd_list_columns[2]->name = "Type";
+	ucmd_list_columns[3]->name = "Size";
+	ucmd_list_columns[4]->name = "Date";
+	ucmd_list_columns[5]->name = "Attributes";
+	ucmd_list_columns[6]->name = "Path";
+	ucmd_list_columns[7]->name = "MIME Type";
 
-	ucmd_list_columns[0]->get_info = &ucmd_column_get_info_name;
-	ucmd_list_columns[1]->get_info = &ucmd_column_get_info_ext;
-	ucmd_list_columns[2]->get_info = &ucmd_column_get_info_size;
-	ucmd_list_columns[3]->get_info = &ucmd_column_get_info_mtime;
-	ucmd_list_columns[4]->get_info = &ucmd_column_get_info_mode;
-	ucmd_list_columns[5]->get_info = &ucmd_column_get_info_path;
-	ucmd_list_columns[6]->get_info = &ucmd_column_get_info_type;
+	ucmd_list_columns[0]->get_info = &ucmd_column_get_info_icon;
+	ucmd_list_columns[1]->get_info = &ucmd_column_get_info_name;
+	ucmd_list_columns[2]->get_info = &ucmd_column_get_info_ext;
+	ucmd_list_columns[3]->get_info = &ucmd_column_get_info_size;
+	ucmd_list_columns[4]->get_info = &ucmd_column_get_info_mtime;
+	ucmd_list_columns[5]->get_info = &ucmd_column_get_info_mode;
+	ucmd_list_columns[6]->get_info = &ucmd_column_get_info_path;
+	ucmd_list_columns[7]->get_info = &ucmd_column_get_info_type;
 }
 
 static void ucmd_dir_list_add_file_callback(GObject *direnum,
@@ -206,7 +209,6 @@ static gint ucmd_dirs_sort_func (GtkTreeModel *model,
 	/* We need this function because we want to sort
 	* folders before files.
 	*/
-
 	gtk_tree_model_get (model, a,
                       ucmd_list_columns_amount+1, &is_dir_a,
                       ucmd_list_column_name_index, &name_a,
@@ -216,13 +218,18 @@ static gint ucmd_dirs_sort_func (GtkTreeModel *model,
                       ucmd_list_columns_amount+1, &is_dir_b,
                       ucmd_list_column_name_index, &name_b,
                       -1);
-
+	
 	if (!is_dir_a && is_dir_b)
 		ret = 1;
 	else if (is_dir_a && !is_dir_b)
 		ret = -1;
 	else{
-		ret = g_utf8_collate (name_a, name_b);
+		/* If we met last row */
+		if( name_b != NULL ){
+			ret = g_utf8_collate (name_a, name_b);
+		}else{
+			ret = 1;
+		}
 	}
 
 	g_free (name_a);
@@ -246,6 +253,7 @@ int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list){
 	}
 
 	(*list)->store = gtk_list_store_new(ucmd_list_columns_amount+SYS_COL_AMOUNT,
+										G_TYPE_STRING,
 										G_TYPE_STRING,
 										G_TYPE_STRING,
 										G_TYPE_STRING,
@@ -366,5 +374,20 @@ int ucmd_column_get_info_mode(GFileInfo *info, gchar **output){
 
 int ucmd_column_get_info_path(GFileInfo *info, gchar **output){
 	*output = g_strdup("NYI");
+	return 0;
+}
+
+int ucmd_column_get_info_icon(GFileInfo *info, gchar **output){
+	gchar *type = (gchar*)g_file_info_get_attribute_string(info,
+					G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE);
+	if( type == NULL ){
+		return EGETINFO;
+	}
+	gchar *icon = g_content_type_get_generic_icon_name(type);
+	if( icon != NULL ){
+		*output = icon;
+	}else{
+		*output = g_strdup("text-x-generic");
+	}
 	return 0;
 }

@@ -51,3 +51,5 @@ int ucmd_column_get_info_mtime(GFileInfo *info, gchar **output);
 int ucmd_column_get_info_mode(GFileInfo *info, gchar **output);
 
 int ucmd_column_get_info_path(GFileInfo *info, gchar **output);
+
+int ucmd_column_get_info_icon(GFileInfo *info, gchar **output);
