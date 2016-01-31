@@ -81,9 +81,9 @@ static void activate_about(GSimpleAction *action,
 }
 
 static GActionEntry app_entries[] = {
-	{ "view", ucmd_dir_view_on_view_action, NULL, NULL, NULL },
+	{ "view", ucmd_dir_view_on_action, NULL, NULL, NULL },
 	{ "edit", activate_action, NULL, NULL, NULL },
-	{ "copy", activate_action, NULL, NULL, NULL },
+	{ "copy", ucmd_dir_view_on_action, NULL, NULL, NULL },
 	{ "move", activate_action, NULL, NULL, NULL },
 	{ "mkdir", activate_action, NULL, NULL, NULL },
 	{ "term", activate_action, NULL, NULL, NULL },
@@ -131,7 +131,7 @@ static void ucmd_new_window(GApplication *app, GFile *file){
 
 	GtkTreeView *right_view = GTK_TREE_VIEW(gtk_builder_get_object(builder,
 							"right_view"));
-	
+
 	/* TODO: Get from GSettings */
 	const gchar *init_path = "/";
 

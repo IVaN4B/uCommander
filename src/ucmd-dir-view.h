@@ -1,4 +1,9 @@
 #pragma once
+#define UCMD_ACTIONS_AMOUNT 2
+typedef struct{
+	gchar *action;
+	GtkTreeSelectionForeachFunc callback;
+} ucmd_dir_view_action_callback_t;
 
 typedef struct _UcommanderDirView{
 	UcommanderDirList *list;
@@ -24,5 +29,5 @@ gboolean ucmd_dir_view_on_button_pressed(GtkTreeView *view, GdkEventButton *even
 
 gboolean ucmd_dir_view_on_popup_menu(GtkTreeView *view, gpointer user_data);
 
-void ucmd_dir_view_on_view_action(GSimpleAction *action, GVariant *param,
-				gpointer app);
+void ucmd_dir_view_on_action(GSimpleAction *action, GVariant *param,
+				gpointer user_data);

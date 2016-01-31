@@ -3,6 +3,15 @@
 #include "ucmd-dir-list.h"
 #include "ucmd-dir-view.h"
 
+static void launch_associated_app(GtkTreeModel *model, GtkTreePath *tree_path,
+				GtkTreeIter *iter, gpointer data);
+static void start_copy(GtkTreeModel *model, GtkTreePath *tree_path,
+				GtkTreeIter *iter, gpointer data);
+
+static ucmd_dir_view_action_callback_t ucmd_actions[UCMD_ACTIONS_AMOUNT] = {
+	{ "view", &launch_associated_app },
+	{ "copy", &start_copy }
+};
 int ucmd_dir_view_create(const gchar *path, GtkTreeView *view, GtkLabel *label,
 				GtkWindow *window, UcommanderDirView **dir_view){
 	g_assert(view != NULL && label != NULL);
@@ -27,16 +36,23 @@ int ucmd_dir_view_create(const gchar *path, GtkTreeView *view, GtkLabel *label,
 	renderer = gtk_cell_renderer_text_new();
 	
 	size_t amount = ucmd_dir_list_get_columns_amount();
+	UcommanderDirListColumn *name_col = ucmd_dir_list_get_name_column();
+	size_t name_pos = name_col->position;
 	UcommanderDirListColumn **columns = (*dir_view)->list->columns;
 	for(size_t i = 0; i < amount; i++){
 		if( !columns[i]->visible ) continue;
 		size_t cindex = columns[i]->position;
 		const gchar *name = columns[i]->name;
-		column = gtk_tree_view_column_new_with_attributes(
-						_(name),
-						renderer,
-						"text", cindex,
-						NULL);
+		column = gtk_tree_view_column_new();
+		gtk_tree_view_column_set_title(column, _(name));
+		if( cindex == name_pos ){
+			GtkCellRenderer *icon_renderer = gtk_cell_renderer_pixbuf_new();
+			gtk_tree_view_column_pack_start(column, icon_renderer, FALSE);
+			gtk_tree_view_column_add_attribute(column, icon_renderer,
+							"icon-name", cindex-1); 
+		}
+		gtk_tree_view_column_pack_end(column, renderer, FALSE);
+		gtk_tree_view_column_add_attribute(column, renderer, "text", cindex);
 		gtk_tree_view_column_set_resizable(column, 1);
 		gtk_tree_view_column_set_sort_column_id(column, cindex);
 		gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
@@ -59,6 +75,15 @@ int ucmd_dir_view_free(UcommanderDirView *dir_view){
 	return 0;
 }
 
+static void on_open_item_activated(GtkMenuItem *item, gpointer user_data){
+	GtkTreeView *tree_view = GTK_TREE_VIEW(user_data);
+	GtkTreeSelection *sel = gtk_tree_view_get_selection(
+						GTK_TREE_VIEW(tree_view));
+
+	gtk_tree_selection_selected_foreach(sel,
+								ucmd_actions[0].callback, NULL);
+}
+
 void ucmd_dir_view_show_popup_menu(GtkTreeView *view, GdkEventButton *event,
 				gpointer user_data){
 
@@ -67,6 +92,8 @@ void ucmd_dir_view_show_popup_menu(GtkTreeView *view, GdkEventButton *event,
 	menu = gtk_menu_new();
 
 	menu_item = gtk_menu_item_new_with_label(_("Open"));
+	
+	g_signal_connect(menu_item, "activate", G_CALLBACK(on_open_item_activated), view);
 
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
 
@@ -116,6 +143,11 @@ static void launch_associated_app(GtkTreeModel *model, GtkTreePath *tree_path,
 	}
 }
 
+static void start_copy(GtkTreeModel *model, GtkTreePath *tree_path,
+				GtkTreeIter *iter, gpointer data){
+	g_message("copy");
+}
+
 void ucmd_dir_view_on_row_activated(GtkTreeView *view, GtkTreePath *tree_path,
 				GtkTreeViewColumn *column,
 				gpointer user_data){
@@ -140,7 +172,6 @@ void ucmd_dir_view_on_row_activated(GtkTreeView *view, GtkTreePath *tree_path,
 	}else{
 		launch_associated_app(GTK_TREE_MODEL(store), tree_path, &iter, path);
 	}
-
 	g_free(path);
 }
 
@@ -176,14 +207,30 @@ gboolean ucmd_dir_view_on_popup_menu(GtkTreeView *view, gpointer user_data){
 	return TRUE;
 }
 
-void ucmd_dir_view_on_view_action(GSimpleAction *action, GVariant *param,
-				gpointer user_data){
-	GtkApplication *app = (GtkApplication*)user_data;
+static GtkTreeView *get_focused_tree_view(GtkApplication *app){
+	g_assert(app != NULL);
 	GtkWindow *window = gtk_application_get_active_window(app);
+	if( window == NULL ) return NULL;
 	GtkWidget *focused = gtk_window_get_focus(window);
 	if( focused != NULL && GTK_IS_TREE_VIEW(focused) ){
+		return GTK_TREE_VIEW(focused);
+	}
+	return NULL;
+}
+
+void ucmd_dir_view_on_action(GSimpleAction *action, GVariant *param,
+				gpointer user_data){
+	GtkTreeView *tree_view = get_focused_tree_view(GTK_APPLICATION(user_data));
+	if( tree_view != NULL ){
 		GtkTreeSelection *sel = gtk_tree_view_get_selection(
-						GTK_TREE_VIEW(focused));
-		gtk_tree_selection_selected_foreach(sel, launch_associated_app, NULL);
+						GTK_TREE_VIEW(tree_view));
+		const gchar *action_name = g_action_get_name(G_ACTION(action));
+		for(int i = 0; i < UCMD_ACTIONS_AMOUNT; i++){
+			if( strcmp(ucmd_actions[i].action, action_name) == 0 ){
+				gtk_tree_selection_selected_foreach(sel,
+								ucmd_actions[i].callback, NULL);
+				break;
+			}
+		}
 	}
 }
