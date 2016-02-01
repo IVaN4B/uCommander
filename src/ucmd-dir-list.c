@@ -90,7 +90,7 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 			for(int k = 0; k < amount; k++){
 
 				if( list->columns[k]->visible
-							   	|| list->columns[k]->always_process ){
+							   || list->columns[k]->always_process ){
 					gchar *column_data;
 					int info_result = list->columns[k]->get_info(info,
 														&column_data);
@@ -140,7 +140,7 @@ static void ucmd_dir_list_enum_files_callback(GObject *dir,
 		g_error_free(error);
 		return;
 	}
-	
+
 	g_file_enumerator_next_files_async(direnum,
 						BLOCK_SIZE,
 						G_PRIORITY_LOW,
@@ -158,7 +158,7 @@ int ucmd_read_dir(const gchar *path, UcommanderDirList *list){
 		g_free((gchar*)list->path);
 	}
 	list->path = g_strdup(path);
-	
+
 	/* Stop previous job before running next one */
 	if( list->cancellable != NULL ){
 		g_cancellable_cancel(list->cancellable);
@@ -211,7 +211,7 @@ static gint ucmd_dirs_sort_func (GtkTreeModel *model,
                       ucmd_list_columns_amount+1, &is_dir_b,
                       ucmd_list_column_name_index, &name_b,
                       -1);
-	
+
 	if (!is_dir_a && is_dir_b)
 		ret = 1;
 	else if (is_dir_a && !is_dir_b)
