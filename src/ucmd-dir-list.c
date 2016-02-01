@@ -259,18 +259,15 @@ int ucmd_dir_list_create(const gchar *path, UcommanderDirList **list){
 	if( ucmd_list_columns_amount == 0 ){
 		ucmd_dir_list_load_columns();
 	}
+	size_t types_amount = ucmd_list_columns_amount+SYS_COL_AMOUNT;
+	GType types[types_amount];
+	for(size_t i = 0; i < types_amount-1; i++){
+		types[i] = G_TYPE_STRING;
+	}
 
-	(*list)->store = gtk_list_store_new(ucmd_list_columns_amount+SYS_COL_AMOUNT,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_STRING,
-										G_TYPE_BOOLEAN);
+	/* Is dir flag */
+	types[types_amount-1] = G_TYPE_BOOLEAN;
+	(*list)->store = gtk_list_store_newv(types_amount, types);
 	/* Set sort column and function */
 	gtk_tree_sortable_set_default_sort_func(GTK_TREE_SORTABLE ((*list)->store),
                                            ucmd_dirs_sort_func,
