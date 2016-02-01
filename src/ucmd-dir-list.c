@@ -1,6 +1,7 @@
 #define _DEFAULT_SOURCE
 #define BUFF_SIZE 1024
 #define BLOCK_SIZE 128
+#define MAX_JOBS 10
 #define SYS_COL_AMOUNT 2
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
@@ -10,6 +11,7 @@
 #include "ucmd-dir-list.h"
 static size_t ucmd_list_columns_amount = 0;
 static size_t ucmd_list_column_name_index = 0;
+static size_t async_jobs_amount = 0;
 static UcommanderDirListColumn **ucmd_list_columns;
 
 UcommanderDirListColumn *ucmd_dir_list_get_column(size_t index){
@@ -67,12 +69,16 @@ void ucmd_dir_list_load_columns(){
 static void ucmd_dir_list_add_file_callback(GObject *direnum,
 				GAsyncResult *result,
 				gpointer user_data){
+	g_return_if_fail(async_jobs_amount < MAX_JOBS);
+	async_jobs_amount++;
+
 	GError *error = NULL;
 	GList *file_list = g_file_enumerator_next_files_finish(
 					G_FILE_ENUMERATOR(direnum),
 					result, &error);
 	UcommanderDirList *list = (UcommanderDirList*)user_data;
 	if( error ){
+		async_jobs_amount--;
 		if( error->code != G_IO_ERROR_CANCELLED ){
 			g_critical("Unable to add files to list, error: %s", error->message);
 		}
@@ -80,6 +86,7 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 		g_error_free(error);
 		return;
 	}else if( file_list == NULL ){
+		async_jobs_amount--;
 		g_object_unref(direnum);
 		g_object_unref(list->cancellable);
 		list->cancellable = NULL;
@@ -131,6 +138,7 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 						list);
 	}
 	g_list_free(file_list);
+	async_jobs_amount--;
 }
 
 static void ucmd_dir_list_enum_files_callback(GObject *dir,
