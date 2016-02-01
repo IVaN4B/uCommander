@@ -91,11 +91,11 @@ static void ucmd_dir_list_add_file_callback(GObject *direnum,
 
 				if( list->columns[k]->visible
 							   || list->columns[k]->always_process ){
-					gchar *column_data;
+					gchar *column_data = NULL;
 					int info_result = list->columns[k]->get_info(info,
 														&column_data);
-					if( info_result != 0 ){
-						column_data = "None";
+					if( info_result != 0 || column_data == NULL ){
+						column_data = g_strdup("");
 					}
 					GValue value = G_VALUE_INIT;
 					g_value_init(&value, G_TYPE_STRING);
@@ -300,8 +300,6 @@ int ucmd_column_get_info_ext(GFileInfo *info, gchar **output){
 		gchar *type = g_utf8_strrchr(name, BUFF_SIZE, '.');
 		*output = g_strdup(type);
 		g_free(name);
-	}else{
-		*output = g_strdup("");
 	}
 	return 0;
 }
