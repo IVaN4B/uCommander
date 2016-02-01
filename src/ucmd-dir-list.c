@@ -3,6 +3,7 @@
 #define BLOCK_SIZE 128
 #define MAX_JOBS 10
 #define SYS_COL_AMOUNT 2
+#define DEFAULT_COLUMNS_AMOUNT 8
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
@@ -10,8 +11,18 @@
 #include <string.h>
 #include "ucmd-dir-list.h"
 static size_t ucmd_list_columns_amount = 0;
-static size_t ucmd_list_column_name_index = 0;
+static size_t ucmd_list_column_name_index = 1;
 static size_t async_jobs_amount = 0;
+static UcommanderDirListColumn default_columns[DEFAULT_COLUMNS_AMOUNT] = {
+	{"Icon", 0, 0, FALSE, TRUE, TRUE, &ucmd_column_get_info_icon},
+	{"Name", 0, 1, TRUE, TRUE, TRUE, &ucmd_column_get_info_name},
+	{"Type", 0, 2, TRUE, TRUE, TRUE, &ucmd_column_get_info_ext},
+	{"Size", 0, 3, TRUE, TRUE, TRUE, &ucmd_column_get_info_size},
+	{"Date", 0, 4, TRUE, TRUE, TRUE, &ucmd_column_get_info_mtime},
+	{"Attributes", 0, 5, TRUE, TRUE, TRUE, &ucmd_column_get_info_mode},
+	{"Path", 0, 6, FALSE, FALSE, TRUE, &ucmd_column_get_info_path},
+	{"MIME Type", 0, 7, TRUE, TRUE, TRUE, &ucmd_column_get_info_type}
+};
 static UcommanderDirListColumn **ucmd_list_columns;
 
 UcommanderDirListColumn *ucmd_dir_list_get_column(size_t index){
@@ -32,38 +43,12 @@ size_t ucmd_dir_list_get_columns_amount(){
 void ucmd_dir_list_load_columns(){
 
 	/* TODO: Really get these from GSettings */
-	ucmd_list_columns_amount = 8;
+	ucmd_list_columns_amount = DEFAULT_COLUMNS_AMOUNT;
 	ucmd_list_columns = g_malloc(sizeof(UcommanderDirListColumn)*
 								 ucmd_list_columns_amount);
-
-	for(int i = 0; i < ucmd_list_columns_amount; i++){
-		ucmd_list_columns[i] = g_new(UcommanderDirListColumn, 1);
-		ucmd_list_columns[i]->position = i;
-		ucmd_list_columns[i]->visible = 1;
-		ucmd_list_columns[i]->always_process = 1;
+	for(size_t i = 0; i < DEFAULT_COLUMNS_AMOUNT; i++){
+		ucmd_list_columns[i] = &default_columns[i];
 	}
-	ucmd_list_columns[6]->visible = 0;
-	ucmd_list_columns[6]->always_process = 0;
-	ucmd_list_columns[0]->visible = 0;
-
-	ucmd_list_column_name_index = 1;
-	ucmd_list_columns[0]->name = "Icon";
-	ucmd_list_columns[1]->name = "Name";
-	ucmd_list_columns[2]->name = "Type";
-	ucmd_list_columns[3]->name = "Size";
-	ucmd_list_columns[4]->name = "Date";
-	ucmd_list_columns[5]->name = "Attributes";
-	ucmd_list_columns[6]->name = "Path";
-	ucmd_list_columns[7]->name = "MIME Type";
-
-	ucmd_list_columns[0]->get_info = &ucmd_column_get_info_icon;
-	ucmd_list_columns[1]->get_info = &ucmd_column_get_info_name;
-	ucmd_list_columns[2]->get_info = &ucmd_column_get_info_ext;
-	ucmd_list_columns[3]->get_info = &ucmd_column_get_info_size;
-	ucmd_list_columns[4]->get_info = &ucmd_column_get_info_mtime;
-	ucmd_list_columns[5]->get_info = &ucmd_column_get_info_mode;
-	ucmd_list_columns[6]->get_info = &ucmd_column_get_info_path;
-	ucmd_list_columns[7]->get_info = &ucmd_column_get_info_type;
 }
 
 static void ucmd_dir_list_add_file_callback(GObject *direnum,
