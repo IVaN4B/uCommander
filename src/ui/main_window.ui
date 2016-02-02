@@ -63,8 +63,8 @@ Author: Ivan Chebykin
         <property name="action_name">app.exit</property>
         <property name="label" translatable="yes">Quit</property>
         <property name="use_underline">True</property>
-        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
         <accelerator key="F10" signal="activate"/>
+        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
       </object>
     </child>
   </object>
@@ -475,6 +475,19 @@ Author: Ivan Chebykin
           <packing>
             <property name="pack_type">end</property>
             <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="show_current_jobs_button">
+            <property name="label" translatable="yes">No running jobs</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="action_name">app.current_ops</property>
+          </object>
+          <packing>
+            <property name="pack_type">end</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>
